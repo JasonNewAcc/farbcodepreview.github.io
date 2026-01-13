@@ -8,15 +8,6 @@
 <link href="https://fonts.cdnfonts.com/css/minecraftia" rel="stylesheet">
 
 <style>
-    body {
-        margin: 0;
-        padding: 40px;
-        font-family: "Segoe UI", sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        transition: 0.3s;
-    }
-
     :root {
         --bg: #121212;
         --text: #ffffff;
@@ -24,11 +15,20 @@
         --border: #333;
     }
 
-    .light {
+    body.light {
         --bg: #e9e9e9;
-        --text: #000;
+        --text: #000000;
         --panel: #ffffff;
-        --border: #ccc;
+        --border: #cccccc;
+    }
+
+    body {
+        margin: 0;
+        padding: 40px;
+        font-family: "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        transition: 0.3s;
     }
 
     .wrapper {
@@ -40,7 +40,7 @@
     h1 {
         color: #00e676;
         margin-bottom: 25px;
-        font-family: Minecraftia;
+        font-family: Minecraftia, monospace;
         letter-spacing: 1px;
     }
 
@@ -54,6 +54,7 @@
         border-radius: 8px;
         cursor: pointer;
         font-weight: bold;
+        user-select: none;
     }
 
     .input-box {
@@ -62,6 +63,7 @@
         border-radius: 10px;
         margin-bottom: 20px;
         border: 2px solid var(--border);
+        box-shadow: 0 0 10px rgba(0,0,0,0.35);
     }
 
     .input-box input {
@@ -73,6 +75,12 @@
         outline: none;
         background: #2b2b2b;
         color: white;
+        box-sizing: border-box;
+    }
+
+    body.light .input-box input {
+        background: #f0f0f0;
+        color: #000;
     }
 
     .grid {
@@ -89,6 +97,7 @@
         cursor: pointer;
         font-weight: bold;
         color: black;
+        user-select: none;
     }
 
     .format-btn {
@@ -101,13 +110,19 @@
         background: rgba(0, 0, 0, 0.55);
         padding: 15px;
         border-radius: 4px;
-        font-family: Minecraftia;
+        font-family: Minecraftia, monospace;
         font-size: 18px;
         min-height: 40px;
         cursor: pointer;
         border-left: 4px solid #00e676;
         text-align: left;
         white-space: pre-wrap;
+        box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    body.light .preview-box {
+        background: rgba(0, 0, 0, 0.65);
+        color: #ffffff;
     }
 
     .notification {
@@ -120,7 +135,15 @@
         border-radius: 8px;
         font-weight: bold;
         display: none;
-        font-family: Minecraftia;
+        font-family: Minecraftia, monospace;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    @keyframes obf {
+        0% { opacity: 0.2; }
+        50% { opacity: 1; }
+        100% { opacity: 0.2; }
     }
 </style>
 </head>
@@ -130,7 +153,7 @@
 
 <div class="wrapper">
 
-    <h1>Minecraft Chat Vorschau</h1>
+    <h1>Minecraft Chat - Farbcode Vorschau</h1>
 
     <div class="input-box">
         <input id="chatInput" placeholder="Gib deinen Minecraft Text ein… (&aHallo)">
@@ -169,6 +192,21 @@
 
     const colorGrid = document.getElementById("colorGrid");
     const formatGrid = document.getElementById("formatGrid");
+    const toggle = document.getElementById("themeToggle");
+
+    // Code an Cursor-Position einfügen
+    function insertAtCursor(code) {
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+
+        input.value = text.slice(0, start) + code + text.slice(end);
+
+        input.selectionStart = input.selectionEnd = start + code.length;
+
+        updatePreview();
+        input.focus();
+    }
 
     // Buttons für Farben
     Object.entries(colors).forEach(([code, color]) => {
@@ -176,10 +214,7 @@
         btn.className = "btn";
         btn.style.background = color;
         btn.textContent = code;
-        btn.onclick = () => {
-            input.value += code;
-            updatePreview();
-        };
+        btn.onclick = () => insertAtCursor(code);
         colorGrid.appendChild(btn);
     });
 
@@ -188,10 +223,7 @@
         const btn = document.createElement("button");
         btn.className = "btn format-btn";
         btn.textContent = code;
-        btn.onclick = () => {
-            input.value += code;
-            updatePreview();
-        };
+        btn.onclick = () => insertAtCursor(code);
         formatGrid.appendChild(btn);
     });
 
@@ -214,7 +246,9 @@
             if (text[i] === "&" && i + 1 < text.length) {
                 const code = "&" + text[i + 1];
 
-                if (colors[code]) color = colors[code];
+                if (colors[code]) {
+                    color = colors[code];
+                }
                 if (formats[code]) {
                     if (code === "&r") {
                         color = "#FFFFFF";
@@ -223,9 +257,9 @@
                         style += formats[code];
                     }
                 }
-
                 i++;
             } else {
+                // Für &k kannst du theoretisch random chars generieren, hier nur Stil
                 html += `<span style="color:${color};${style}">${text[i]}</span>`;
             }
         }
@@ -239,7 +273,6 @@
     };
 
     // Theme Switcher
-    const toggle = document.getElementById("themeToggle");
     toggle.onclick = () => {
         document.body.classList.toggle("light");
     };
