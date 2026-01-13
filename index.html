@@ -1,119 +1,251 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Minecraft Chat Vorschau</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1e1e1e;
-      color: #fff;
-      padding: 30px;
-    }
-    h1 {
-      color: #00ff99;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-    }
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 5px;
-      margin-bottom: 20px;
-    }
-    .color-btn {
-      padding: 8px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      color: #000;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: none;
-      margin-bottom: 10px;
-    }
-    .preview {
-      padding: 12px;
-      background: #2e2e2e;
-      border-radius: 4px;
-      white-space: pre-wrap;
-      font-family: 'Courier New', monospace;
-    }
-    .warning {
-      color: red;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Minecraft Chat Vorschau</h1>
-    <div class="color-grid" id="colorGrid"></div>
-    <input type="text" id="chatInput" placeholder="Gib deinen Minecraft-Text ein…">
-    <div class="warning" id="warning"></div>
-    <div class="preview" id="chatPreview"></div>
-  </div>
+<meta charset="UTF-8">
+<title>Minecraft Chat Vorschau</title>
 
-  <script>
+<!-- Minecraft Font -->
+<link href="https://fonts.cdnfonts.com/css/minecraftia" rel="stylesheet">
+
+<style>
+    body {
+        margin: 0;
+        padding: 40px;
+        font-family: "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        transition: 0.3s;
+    }
+
+    :root {
+        --bg: #121212;
+        --text: #ffffff;
+        --panel: #1f1f1f;
+        --border: #333;
+    }
+
+    .light {
+        --bg: #e9e9e9;
+        --text: #000;
+        --panel: #ffffff;
+        --border: #ccc;
+    }
+
+    .wrapper {
+        width: 650px;
+        margin: auto;
+        text-align: center;
+    }
+
+    h1 {
+        color: #00e676;
+        margin-bottom: 25px;
+        font-family: Minecraftia;
+        letter-spacing: 1px;
+    }
+
+    .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--panel);
+        border: 2px solid var(--border);
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .input-box {
+        background: var(--panel);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 2px solid var(--border);
+    }
+
+    .input-box input {
+        width: 100%;
+        padding: 12px;
+        font-size: 18px;
+        border-radius: 6px;
+        border: none;
+        outline: none;
+        background: #2b2b2b;
+        color: white;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        color: black;
+    }
+
+    .format-btn {
+        background: #333;
+        color: white;
+    }
+
+    /* Minecraft Chat Box */
+    .preview-box {
+        background: rgba(0, 0, 0, 0.55);
+        padding: 15px;
+        border-radius: 4px;
+        font-family: Minecraftia;
+        font-size: 18px;
+        min-height: 40px;
+        cursor: pointer;
+        border-left: 4px solid #00e676;
+        text-align: left;
+        white-space: pre-wrap;
+    }
+
+    .notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ff1744;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        display: none;
+        font-family: Minecraftia;
+    }
+</style>
+</head>
+
+<body>
+<div class="theme-toggle" id="themeToggle">Theme wechseln</div>
+
+<div class="wrapper">
+
+    <h1>Minecraft Chat Vorschau</h1>
+
+    <div class="input-box">
+        <input id="chatInput" placeholder="Gib deinen Minecraft Text ein… (&aHallo)">
+    </div>
+
+    <div class="grid" id="colorGrid"></div>
+
+    <div class="grid" id="formatGrid"></div>
+
+    <div class="preview-box" id="previewBox" title="Klicken zum Kopieren"></div>
+
+    <div class="notification" id="notification">Chat geht nicht größer</div>
+
+</div>
+
+<script>
     const colors = {
-      '§0': '#000000', '§1': '#0000AA', '§2': '#00AA00', '§3': '#00AAAA',
-      '§4': '#AA0000', '§5': '#AA00AA', '§6': '#FFAA00', '§7': '#AAAAAA',
-      '§8': '#555555', '§9': '#5555FF', '§a': '#55FF55', '§b': '#55FFFF',
-      '§c': '#FF5555', '§d': '#FF55FF', '§e': '#FFFF55', '§f': '#FFFFFF'
+        '&0': '#000000', '&1': '#0000AA', '&2': '#00AA00', '&3': '#00AAAA',
+        '&4': '#AA0000', '&5': '#AA00AA', '&6': '#FFAA00', '&7': '#AAAAAA',
+        '&8': '#555555', '&9': '#5555FF', '&a': '#55FF55', '&b': '#55FFFF',
+        '&c': '#FF5555', '&d': '#FF55FF', '&e': '#FFFF55', '&f': '#FFFFFF'
     };
 
-    const input = document.getElementById('chatInput');
-    const preview = document.getElementById('chatPreview');
-    const warning = document.getElementById('warning');
-    const grid = document.getElementById('colorGrid');
+    const formats = {
+        '&l': 'font-weight:bold;',
+        '&n': 'text-decoration:underline;',
+        '&m': 'text-decoration:line-through;',
+        '&o': 'font-style:italic;',
+        '&k': 'animation: obf 0.1s infinite;',
+        '&r': 'color:#FFFFFF;font-weight:normal;text-decoration:none;font-style:normal;animation:none;'
+    };
 
+    const input = document.getElementById("chatInput");
+    const preview = document.getElementById("previewBox");
+    const notification = document.getElementById("notification");
+
+    const colorGrid = document.getElementById("colorGrid");
+    const formatGrid = document.getElementById("formatGrid");
+
+    // Buttons für Farben
     Object.entries(colors).forEach(([code, color]) => {
-      const btn = document.createElement('button');
-      btn.textContent = code;
-      btn.className = 'color-btn';
-      btn.style.backgroundColor = color;
-      btn.onclick = () => {
-        input.value += code;
-        updatePreview();
-      };
-      grid.appendChild(btn);
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.style.background = color;
+        btn.textContent = code;
+        btn.onclick = () => {
+            input.value += code;
+            updatePreview();
+        };
+        colorGrid.appendChild(btn);
     });
 
-    input.addEventListener('input', updatePreview);
+    // Buttons für Formatierungen
+    Object.keys(formats).forEach(code => {
+        const btn = document.createElement("button");
+        btn.className = "btn format-btn";
+        btn.textContent = code;
+        btn.onclick = () => {
+            input.value += code;
+            updatePreview();
+        };
+        formatGrid.appendChild(btn);
+    });
+
+    input.addEventListener("input", updatePreview);
 
     function updatePreview() {
-      const text = input.value;
-      if (text.length > 100) {
-        warning.textContent = 'Chat geht nicht größer';
-      } else {
-        warning.textContent = '';
-      }
+        const text = input.value;
 
-      // Minecraft-Farbcode simulieren
-      let html = '';
-      let currentColor = '#FFFFFF';
-      for (let i = 0; i < text.length; i++) {
-        if (text[i] === '§' && i + 1 < text.length) {
-          const code = '§' + text[i + 1];
-          if (colors[code]) {
-            currentColor = colors[code];
-          }
-          i++; // Skip next character
+        if (text.length > 100) {
+            notification.style.display = "block";
         } else {
-          html += `<span style="color:${currentColor}">${text[i]}</span>`;
+            notification.style.display = "none";
         }
-      }
-      preview.innerHTML = html;
+
+        let html = "";
+        let color = "#FFFFFF";
+        let style = "";
+
+        for (let i = 0; i < text.length; i++) {
+            if (text[i] === "&" && i + 1 < text.length) {
+                const code = "&" + text[i + 1];
+
+                if (colors[code]) color = colors[code];
+                if (formats[code]) {
+                    if (code === "&r") {
+                        color = "#FFFFFF";
+                        style = "";
+                    } else {
+                        style += formats[code];
+                    }
+                }
+
+                i++;
+            } else {
+                html += `<span style="color:${color};${style}">${text[i]}</span>`;
+            }
+        }
+
+        preview.innerHTML = html;
     }
 
+    // Kopieren beim Klicken
+    preview.onclick = () => {
+        navigator.clipboard.writeText(input.value);
+    };
+
+    // Theme Switcher
+    const toggle = document.getElementById("themeToggle");
+    toggle.onclick = () => {
+        document.body.classList.toggle("light");
+    };
+
     updatePreview();
-  </script>
+</script>
+
 </body>
 </html>
